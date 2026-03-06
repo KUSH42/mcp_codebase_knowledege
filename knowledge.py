@@ -46,13 +46,17 @@ def _stem(word: str) -> str:
     """Minimal suffix-stripping stemmer. No external dependencies."""
     if len(word) <= 3:
         return word
+    # -ies -> -y replacement (queries -> query, bodies -> body).
+    # Checked before -es/-s so "queries" doesn't reduce to "queri" or "querie".
+    if word.endswith("ies") and len(word) - 3 >= 3:
+        return word[:-3] + "y"
     # Order matters — longest suffixes first; -e before -es/-s.
     # See spec "Suffix ordering rationale". Do not rearrange.
     for suffix, min_stem in [
         ("ation", 3), ("tion", 3), ("sion", 3),
         ("ness", 3), ("ment", 3),
         ("able", 3), ("ible", 3), ("er", 3),
-        ("ing", 3), ("ies", 3), ("ed", 3), ("ly", 3),
+        ("ing", 3), ("ed", 3), ("ly", 3),
         ("e", 4), ("es", 4), ("s", 3),
     ]:
         if word.endswith(suffix) and len(word) - len(suffix) >= min_stem:
@@ -186,6 +190,8 @@ class KnowledgeStore:
 
     def _validate_store_input(self, title_or_name: str, content: str,
                               tags: list[str] | None) -> None:
+        if not title_or_name.strip():
+            raise ValueError("Title/name must not be empty")
         if len(title_or_name) > self._config.max_title_length:
             raise ValueError(f"Title/name exceeds {self._config.max_title_length} chars")
         self._validate_content(content)

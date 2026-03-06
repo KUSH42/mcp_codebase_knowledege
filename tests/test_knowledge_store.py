@@ -128,6 +128,9 @@ class TestStemmer:
         ("contain", "contain"),
         ("scalable", "scal"),
         ("scaling", "scal"),
+        ("queries", "query"),
+        ("bodies", "body"),
+        ("copies", "copy"),
     ])
     def test_stem_truth_table(self, word, expected):
         assert _stem(word) == expected
@@ -204,6 +207,14 @@ class TestSlugify:
 # ---------------------------------------------------------------------------
 
 class TestValidation:
+    def test_empty_title(self, store):
+        with pytest.raises(ValueError, match="must not be empty"):
+            store.store_decision("", "content")
+
+    def test_whitespace_title(self, store):
+        with pytest.raises(ValueError, match="must not be empty"):
+            store.store_decision("   ", "content")
+
     def test_content_too_long(self, custom_config_store):
         with pytest.raises(ValueError, match="Content exceeds"):
             custom_config_store.store_decision("Title", "x" * 101)
@@ -302,7 +313,7 @@ class TestBM25Search:
         for i in range(10):
             store.store_decision(f"Decision {i}", f"Content about topic {i}")
         results, total = store.query_decisions("topic", limit=3)
-        assert len(results) <= 3
+        assert len(results) == 3
         assert total == 10
 
     def test_pattern_search(self, store):
@@ -351,7 +362,7 @@ class TestGoldenRanking:
         """Newer entry ranks above older with equal text relevance."""
         key1 = store.store_decision("Old Decision", "About authentication security")
         # Backdate the first entry
-        entry = store._store.read("kb_decisions", key1)
+        entry = dict(store._store.read("kb_decisions", key1))
         entry["created_at"] = time.time() - 25 * 86400  # 25 days old
         store._store.write("kb_decisions", key1, entry)
 

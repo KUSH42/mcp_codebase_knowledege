@@ -20,7 +20,8 @@ _knowledge: KnowledgeStore | None = None
 
 def _ks() -> KnowledgeStore:
     """Return the initialized KnowledgeStore singleton."""
-    assert _knowledge is not None, "KnowledgeStore not initialized"
+    if _knowledge is None:
+        raise RuntimeError("KnowledgeStore not initialized — start the server via __main__.py")
     return _knowledge
 
 

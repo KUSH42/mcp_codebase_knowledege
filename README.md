@@ -70,11 +70,12 @@ The `+1` inside `log()` prevents negative IDF for terms appearing in more than h
 
 ### Stemmer
 
-A 40-line suffix stripper handles English inflections common in programming terminology:
+A minimal suffix stripper handles English inflections common in programming terminology:
 
 | Suffix group | Examples | Behavior |
 |-------------|----------|----------|
 | `-ing`, `-ed` | running&rarr;run, stopped&rarr;stop | Doubled-consonant de-dup (`bdglmnprt`) |
+| `-ies` | queries&rarr;query, bodies&rarr;body | Replaced with `-y` (not stripped); checked before `-es`/`-s` |
 | `-e` | create&rarr;creat, cache&rarr;cach | Min stem length 4 |
 | `-s`, `-es` | patterns&rarr;pattern, classes&rarr;class | Double-s guard (class, process stay intact) |
 | `-able`, `-ible`, `-er` | configurable&rarr;configur, handler&rarr;handl | Aligns with `-e` and `-ing` forms |
@@ -87,7 +88,7 @@ This means a query for `"database scaling"` matches a document containing `"data
 
 ### Stopwords
 
-53 common English words are filtered at tokenization time. A query for `"use the REST API for authentication"` becomes `["rest", "api", "authentic"]` — three signal-carrying stems instead of seven tokens diluted by noise.
+55 common English words are filtered at tokenization time. A query for `"use the REST API for authentication"` becomes `["rest", "api", "authentic"]` — three signal-carrying stems instead of seven tokens diluted by noise.
 
 ### Recency
 
@@ -161,6 +162,7 @@ All inputs are validated before storage:
 
 | Constraint | Default | Error |
 |-----------|---------|-------|
+| Title/name non-empty | — | `ValueError` |
 | Content length | 50,000 chars | `ValueError` |
 | Title/name length | 200 chars | `ValueError` |
 | Tag length | 50 chars per tag | `ValueError` |
@@ -203,9 +205,9 @@ Zero imports from `control_plane` or `execution_plane`. The server is a standalo
 
 ## Tests
 
-128 tests covering:
+133 tests covering:
 
-- **Stemmer truth table** — 37 word pairs validated against expected stems
+- **Stemmer truth table** — 40 word pairs validated against expected stems
 - **Golden ranking** — 6 test cases asserting specific ranking outcomes (term relevance, stemmer recall, recency boost, length normalization, cross-namespace)
 - **CRUD lifecycle** — store, query, update, delete for all three namespaces
 - **Validation** — boundary values for all input constraints
